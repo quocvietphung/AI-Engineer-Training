@@ -1,55 +1,77 @@
 from dotenv import load_dotenv
 from datetime import datetime
 import os
+import azure.cognitiveservices.speech as speechsdk
 
-# Import namespaces
-
-
+# Hàm chính
 def main():
     try:
         global speech_config
 
-        # Get Configuration Settings
+        # Load cấu hình từ .env
         load_dotenv()
         cog_key = os.getenv('COG_SERVICE_KEY')
         cog_region = os.getenv('COG_SERVICE_REGION')
 
-        # Configure speech service
-        
+        # Cấu hình dịch vụ Speech
+        speech_config = speechsdk.SpeechConfig(subscription=cog_key, region=cog_region)
 
-        # Get spoken input
+        # Nhận giọng nói
         command = TranscribeCommand()
+
+        # Nếu người dùng nói đúng "What time is it?"
         if command.lower() == 'what time is it?':
             TellTime()
 
     except Exception as ex:
         print(ex)
 
+
+# Hàm Speech-to-Text (nhận giọng nói)
 def TranscribeCommand():
     command = ''
 
-    # Configure speech recognition
+    # Dùng micro làm nguồn input
+    audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
+    speech_recognizer = speechsdk.SpeechRecognizer(
+        speech_config=speech_config,
+        audio_config=audio_config
+    )
 
+    print("Say something...")
 
-    # Process speech input
+    # Nhận một câu
+    result = speech_recognizer.recognize_once()
 
+    # Xử lý kết quả
+    if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        command = result.text
+        print("You said: {}".format(command))
+    elif result.reason == speechsdk.ResultReason.NoMatch:
+        print("No speech could be recognized")
+    elif result.reason == speechsdk.ResultReason.Canceled:
+        cancellation = result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation.reason))
 
-    # Return the command
     return command
 
 
+# Hàm Text-to-Speech (trả lời giờ hiện tại)
 def TellTime():
     now = datetime.now()
-    response_text = 'The time is {}:{:02d}'.format(now.hour,now.minute)
+    response_text = 'The time is {}:{:02d}'.format(now.hour, now.minute)
 
+    # Dùng loa mặc định
+    audio_config = speechsdk.audio.AudioConfig(use_default_speaker=True)
+    speech_synthesizer = speechsdk.SpeechSynthesizer(
+        speech_config=speech_config,
+        audio_config=audio_config
+    )
 
-    # Configure speech synthesis
-    
+    # Nói câu trả lời
+    speech_synthesizer.speak_text_async(response_text).get()
 
-    # Synthesize spoken output
-
-
-    # Print the response
+    # In ra console
     print(response_text)
 
 

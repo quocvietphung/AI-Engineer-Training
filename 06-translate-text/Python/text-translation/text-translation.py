@@ -35,22 +35,59 @@ def main():
         print(ex)
 
 def GetLanguage(text):
-    # Default language is English
     language = 'en'
 
-    # Use the Translator detect function
+    path = '/detect'
+    url = translator_endpoint + path
 
+    params = {
+        'api-version': '3.0'
+    }
 
-    # Return the language
+    headers = {
+        'Ocp-Apim-Subscription-Key': cog_key,
+        'Ocp-Apim-Subscription-Region': cog_region,
+        'Content-type': 'application/json'
+    }
+
+    body = [{'text': text}]
+
+    # Call Translator API
+    request = requests.post(url, params=params, headers=headers, json=body)
+    response = request.json()
+
+    # Lấy ngôn ngữ từ response
+    language = response[0]["language"]
+
     return language
 
 def Translate(text, source_language):
     translation = ''
 
-    # Use the Translator translate function
+    path = '/translate'
+    url = translator_endpoint + path
 
+    params = {
+        'api-version': '3.0',
+        'from': source_language,
+        'to': ['en']
+    }
 
-    # Return the translation
+    headers = {
+        'Ocp-Apim-Subscription-Key': cog_key,
+        'Ocp-Apim-Subscription-Region': cog_region,
+        'Content-type': 'application/json'
+    }
+
+    body = [{'text': text}]
+
+    # Call Translator API
+    request = requests.post(url, params=params, headers=headers, json=body)
+    response = request.json()
+
+    # Lấy bản dịch
+    translation = response[0]["translations"][0]["text"]
+
     return translation
 
 if __name__ == "__main__":
